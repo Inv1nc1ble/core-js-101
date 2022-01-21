@@ -20,8 +20,14 @@
  *    console.log(r.height);      // => 20
  *    console.log(r.getArea());   // => 200
  */
-function Rectangle(/* width, height */) {
-  throw new Error('Not implemented');
+function Rectangle(width, height) {
+  return {
+    width,
+    height,
+    getArea() {
+      return width * height;
+    },
+  };
 }
 
 
@@ -35,8 +41,8 @@ function Rectangle(/* width, height */) {
  *    [1,2,3]   =>  '[1,2,3]'
  *    { width: 10, height : 20 } => '{"height":10,"width":20}'
  */
-function getJSON(/* obj */) {
-  throw new Error('Not implemented');
+function getJSON(obj) {
+  return JSON.stringify(obj);
 }
 
 
@@ -51,8 +57,10 @@ function getJSON(/* obj */) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  Object.setPrototypeOf(obj, proto);
+  return obj;
 }
 
 
@@ -110,33 +118,123 @@ function fromJSON(/* proto, json */) {
  *  For more examples see unit tests.
  */
 
+class Selector {
+  constructor(value) {
+    this.value = value;
+    this.arr = [];
+  }
+}
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    let res;
+    if (!this.value) {
+      res = new Selector(value);
+      res.arr.push(0);
+    } else {
+      if (this.arr.includes(0)) throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+      throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+    }
+    Object.setPrototypeOf(res, cssSelectorBuilder);
+    return res;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    let res;
+    if (!this.value) {
+      res = new Selector(`#${value}`);
+      res.arr.push(1);
+    } else {
+      if (this.value.includes('#')) {
+        throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+      }
+      if (this.arr[this.arr.length - 1] > 1) {
+        throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+      }
+      res = new Selector(`${this.value}#${value}`);
+      this.arr.push(1);
+      res.arr = [...this.arr];
+    }
+    Object.setPrototypeOf(res, cssSelectorBuilder);
+    return res;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    let res;
+    if (!this.value) {
+      res = new Selector(`.${value}`);
+      res.arr.push(2);
+    } else {
+      res = new Selector(`${this.value}.${value}`);
+      if (this.arr[this.arr.length - 1] > 2) {
+        throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+      }
+      this.arr.push(2);
+      res.arr = [...this.arr];
+    }
+    Object.setPrototypeOf(res, cssSelectorBuilder);
+    return res;
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    let res;
+    if (!this.value) {
+      res = new Selector(`[${value}]`);
+      res.arr.push(3);
+    } else {
+      res = new Selector(`${this.value}[${value}]`);
+      if (this.arr[this.arr.length - 1] > 3) {
+        throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+      }
+      this.arr.push(3);
+      res.arr = [...this.arr];
+    }
+    Object.setPrototypeOf(res, cssSelectorBuilder);
+    return res;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    let res;
+    if (!this.value) {
+      res = new Selector(`:${value}`);
+      res.arr.push(4);
+    } else {
+      res = new Selector(`${this.value}:${value}`);
+      if (this.arr[this.arr.length - 1] > 4) {
+        throw new Error('Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element');
+      }
+      this.arr.push(4);
+      res.arr = [...this.arr];
+    }
+    Object.setPrototypeOf(res, cssSelectorBuilder);
+    return res;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    let res;
+    if (!this.value) {
+      res = new Selector(`::${value}`);
+      res.arr.push(5);
+    } else {
+      if (this.value.includes('::')) {
+        throw new Error('Element, id and pseudo-element should not occur more then one time inside the selector');
+      }
+      res = new Selector(`${this.value}::${value}`);
+      this.arr.push(5);
+      res.arr = [...this.arr];
+    }
+    Object.setPrototypeOf(res, cssSelectorBuilder);
+    return res;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    const selector = new Selector(`${selector1.value} ${combinator} ${selector2.value}`);
+    Object.setPrototypeOf(selector, cssSelectorBuilder);
+    return selector;
+  },
+  stringify() {
+    if (!this.value) return '';
+    return this.value;
   },
 };
 
